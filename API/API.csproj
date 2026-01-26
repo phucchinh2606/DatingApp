@@ -15,7 +15,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Data\" />
     <Folder Include="DTOs\" />
     <Folder Include="Entities\" />
     <Folder Include="Errors\" />
