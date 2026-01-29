@@ -1,18 +1,97 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, signal, ViewChild } from '@angular/core';
 import { MemberService } from '../../../core/services/member-service';
 import { MemberCard } from '../member-card/member-card';
+import { Member, MemberParams } from '../../../types/member';
+import { PaginatedResult } from '../../../types/pagination';
+import { Paginator } from '../../../shared/paginator/paginator';
+import { FilterModal } from '../filter-modal/filter-modal';
 
 @Component({
   selector: 'app-member-list',
-  imports: [MemberCard],
+  imports: [MemberCard, Paginator, FilterModal],
   templateUrl: './member-list.html',
   styleUrl: './member-list.css',
 })
 export class MemberList implements OnInit {
-  protected memberServices = inject(MemberService);
-  // protected members$: Observable<Member[]>;
+  @ViewChild('filterModal') modal!: FilterModal;
+  private memberService = inject(MemberService);
+  protected paginatedMembers = signal<PaginatedResult<Member> | null>(null);
+  protected memberParams = new MemberParams();
+  private updateParams = new MemberParams();
+
+  constructor() {
+    const filters = localStorage.getItem('filters');
+    if (filters) {
+      this.memberParams = JSON.parse(filters);
+      this.updateParams = JSON.parse(filters);
+    }
+  }
 
   ngOnInit(): void {
-    this.memberServices.getMembers().subscribe();
+    this.loadMembers();
+  }
+
+  loadMembers() {
+    this.memberService.getMembers(this.memberParams).subscribe({
+      next: (result) => {
+        this.paginatedMembers.set(result);
+      },
+      error: (error) => {
+        console.log(error);
+      },
+    });
+  }
+
+  onPageChange(event: { pageNumber: number; pageSize: number }) {
+    this.memberParams.pageNumber = event.pageNumber;
+    this.memberParams.pageSize = event.pageSize;
+    this.loadMembers();
+  }
+
+  openModal() {
+    this.modal.open();
+  }
+
+  onClose() {
+    console.log('close');
+    // this.modal.close();
+  }
+
+  onFilterChange(data: MemberParams) {
+    // console.log('modal submitted data: ', data);
+    this.memberParams = { ...data };
+    this.updateParams = { ...data };
+    this.loadMembers();
+  }
+
+  resetFilters() {
+    this.memberParams = new MemberParams();
+    this.loadMembers();
+  }
+
+  get displayMessage(): string {
+    const defaultParams = new MemberParams();
+    const filters: string[] = [];
+
+    // Xử lý hiển thị giới tính
+    if (this.updateParams.gender) {
+      filters.push(this.updateParams.gender + 's');
+    } else {
+      filters.push('Males, Females');
+    }
+
+    // Xử lý hiển thị độ tuổi nếu khác giá trị mặc định
+    if (
+      this.updateParams.minAge !== defaultParams.minAge ||
+      this.updateParams.maxAge !== defaultParams.maxAge
+    ) {
+      filters.push(`ages ${this.updateParams.minAge}-${this.updateParams.maxAge}`);
+    }
+
+    // Xử lý hiển thị kiểu sắp xếp
+    filters.push(this.updateParams.orderBy === 'lastActive' ? 'Recently active' : 'Newest members');
+
+    // Trả về chuỗi kết quả cuối cùng
+    return filters.length > 0 ? `Selected: ${filters.join(' | ')}` : 'All members';
   }
 }

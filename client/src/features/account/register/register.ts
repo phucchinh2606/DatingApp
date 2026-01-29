@@ -16,6 +16,7 @@ import { JsonPipe } from '@angular/common';
 import { TextInput } from '../../../shared/text-input/text-input';
 import { Router } from '@angular/router';
 import { MemberService } from '../../../core/services/member-service';
+import { MemberParams } from '../../../types/member';
 
 @Component({
   selector: 'app-register',
@@ -83,13 +84,14 @@ export class Register {
 
       this.accountService.register(formData).subscribe({
         next: () => {
-          // 1. Reset danh sách về rỗng trước
           this.memberService.members.set([]);
 
-          // 2. Gọi lấy danh sách mới
-          this.memberService.getMembers().subscribe({
+          // Nếu bạn có một biến memberParams trong memberService để quản lý trạng thái lọc
+          // thì hãy dùng nó, nếu không hãy tạo mới:
+          const params = new MemberParams(); // Giả sử bạn đã định nghĩa class này
+
+          this.memberService.getMembers(params).subscribe({
             next: () => {
-              // 3. Chỉ điều hướng KHI ĐÃ CÓ dữ liệu mới trong Signal
               this.router.navigateByUrl('/members');
             },
           });
