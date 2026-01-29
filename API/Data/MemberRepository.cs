@@ -19,7 +19,7 @@ public class MemberRepository(AppDbContext context) : IMemberRepository
 
     public async Task<IReadOnlyList<Member>> GetMembersAsync()
     {
-        return await context.Members.Include(x=>x.Photos).ToListAsync();
+        return await context.Members.Include(x=>x.Photos).AsNoTracking().ToListAsync();
     }
 
     public async Task<IReadOnlyList<Photo>> GetPhotosForMemberAsync(string memberId)

@@ -53,4 +53,12 @@ export class ImageUpload {
       this.uploadFile.emit(this.fileToUpload);
     }
   }
+
+  onFileSelected(event: any) {
+    const file: File = event.target.files[0];
+    if (file) {
+      this.previewImage(file);
+      this.fileToUpload = file;
+    }
+  }
 }

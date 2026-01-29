@@ -5,6 +5,7 @@ import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { ToastService } from '../../core/services/toast-service';
 import { themes } from '../theme';
 import { BusyService } from '../../core/services/busy-service';
+import { MemberService } from '../../core/services/member-service';
 
 @Component({
   selector: 'app-nav',
@@ -14,6 +15,7 @@ import { BusyService } from '../../core/services/busy-service';
 })
 export class Nav implements OnInit {
   protected accountService = inject(AccountService);
+  protected memberService = inject(MemberService);
   protected busyService = inject(BusyService);
   private router = inject(Router);
   private toast = inject(ToastService);
@@ -38,11 +40,15 @@ export class Nav implements OnInit {
   login() {
     console.log(this.creds);
     this.accountService.login(this.creds).subscribe({
-      next: (result) => {
-        this.router.navigateByUrl('/members');
-        this.toast.success('Logged in successfully');
-        console.log(result);
-        this.creds = {};
+      next: () => {
+        // Trước khi điều hướng, hãy đảm bảo danh sách member được fetch mới cho user này
+        this.memberService.getMembers().subscribe({
+          next: () => {
+            this.router.navigateByUrl('/members');
+            this.toast.success('Logged in successfully');
+            this.creds = {};
+          },
+        });
       },
       error: (error) => {
         this.toast.error(error.error);

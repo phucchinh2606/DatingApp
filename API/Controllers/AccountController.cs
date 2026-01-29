@@ -21,13 +21,24 @@ namespace API.Controllers
                 return BadRequest("Email is already taken");
             }
             using var hmac = new HMACSHA512();
+#pragma warning disable CS8629 // Nullable value type may be null.
             var user = new AppUser
             {
                 Email = registerDto.Email,
                 DisplayName = registerDto.DisplayName,
                 PasswordHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(registerDto.Password)),
-                PasswordSalt = hmac.Key
+                PasswordSalt = hmac.Key,
+                Member=new Member
+                {
+                    DisplayName = registerDto.DisplayName,
+                    Gender = registerDto.Gender,
+                    City = registerDto.City,
+                    Country = registerDto.Country,
+                    DateOfBirth = (DateOnly)registerDto.DateOfBirth
+                }
             };
+#pragma warning restore CS8629 // Nullable value type may be null.
+            user.Member.Id = user.Id;
             context.Users.Add(user);
             await context.SaveChangesAsync();
             return user.ToDto(tokenService);

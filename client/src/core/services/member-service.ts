@@ -12,9 +12,12 @@ export class MemberService {
   private baseUrl = environment.apiUrl;
   editMode = signal(false);
   member = signal<Member | null>(null);
+  members = signal<Member[]>([]); // Khai báo Signal lưu danh sách
 
   getMembers() {
-    return this.http.get<Member[]>(this.baseUrl + 'members');
+    return this.http.get<Member[]>(this.baseUrl + 'members').pipe(
+      tap((members) => this.members.set(members)), // Lưu vào Signal khi fetch thành công
+    );
   }
 
   getMember(id: string) {

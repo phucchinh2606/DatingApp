@@ -12,7 +12,7 @@ import { DeleteButton } from '../../../shared/delete-button/delete-button';
 
 @Component({
   selector: 'app-member-photos',
-  imports: [AsyncPipe, ImageUpload, StarButton, DeleteButton],
+  imports: [ImageUpload, StarButton, DeleteButton],
   templateUrl: './member-photos.html',
   styleUrl: './member-photos.css',
 })
@@ -32,16 +32,49 @@ export class MemberPhotos implements OnInit {
     }
   }
 
+  // onUploadImage(file: File) {
+  //   this.loading.set(true);
+  //   this.memberService.uploadPhoto(file).subscribe({
+  //     next: (photo) => {
+  //       this.memberService.editMode.set(false);
+  //       this.loading.set(false);
+  //       this.photos.update((photos) => [...photos, photo]);
+  //     },
+  //     error: (error) => {
+  //       console.log('error uploading image', error);
+  //       this.loading.set(false);
+  //     },
+  //   });
+  // }
   onUploadImage(file: File) {
     this.loading.set(true);
     this.memberService.uploadPhoto(file).subscribe({
       next: (photo) => {
-        this.memberService.editMode.set(false);
         this.loading.set(false);
+
+        // 1. Cập nhật danh sách ảnh trong component hiện tại
         this.photos.update((photos) => [...photos, photo]);
+
+        // 2. Kiểm tra nếu Member hiện tại chưa có ảnh đại diện
+        const currentMember = this.memberService.member();
+        if (currentMember && !currentMember.imageUrl) {
+          // Cập nhật ảnh đại diện cho Member (Profile & Sidebar)
+          const updatedMember = { ...currentMember, imageUrl: photo.url };
+          this.memberService.member.set(updatedMember);
+
+          // Cập nhật ảnh đại diện cho User (Navbar)
+          const currentUser = this.accountService.currentUser();
+          if (currentUser) {
+            this.accountService.setCurrentUser({
+              ...currentUser,
+              imageUrl: photo.url,
+            });
+          }
+        }
+
+        this.memberService.editMode.set(false);
       },
       error: (error) => {
-        console.log('error uploading image', error);
         this.loading.set(false);
       },
     });

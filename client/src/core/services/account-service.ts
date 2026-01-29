@@ -3,17 +3,25 @@ import { inject, Injectable, signal } from '@angular/core';
 import { LoginCreds, RegisterCreds, User } from '../../types/user';
 import { tap } from 'rxjs/internal/operators/tap';
 import { environment } from '../../environments/environment.development';
+import { MemberService } from './member-service';
 
 @Injectable({
   providedIn: 'root',
 })
 export class AccountService {
   private http = inject(HttpClient);
+  private memberService = inject(MemberService);
   currentUser = signal<User | null>(null);
   baseUrl = environment.apiUrl;
 
   register(creds: RegisterCreds) {
-    return this.http.post<User>(this.baseUrl + 'account/register', creds);
+    return this.http.post<User>(this.baseUrl + 'account/register', creds).pipe(
+      tap((user) => {
+        if (user) {
+          this.setCurrentUser(user);
+        }
+      }),
+    );
   }
 
   login(creds: LoginCreds) {
@@ -29,11 +37,16 @@ export class AccountService {
 
   setCurrentUser(user: User) {
     localStorage.setItem('user', JSON.stringify(user));
-    this.currentUser.set(user);
+    this.currentUser.set({ ...user });
   }
 
   logout() {
     localStorage.removeItem('user');
     this.currentUser.set(null);
+
+    // XÓA SẠCH DỮ LIỆU CŨ NGAY KHI LOGOUT
+    this.memberService.members.set([]);
+    this.memberService.member.set(null);
+    this.memberService.editMode.set(false);
   }
 }
